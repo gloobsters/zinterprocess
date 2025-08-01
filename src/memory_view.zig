@@ -1,5 +1,6 @@
 const win32 = @import("win32");
 const std = @import("std");
+const queue = @import("queue.zig");
 
 const MemoryFileError = error{
     MapFailed,
@@ -10,7 +11,7 @@ const MemoryFileWindows = struct {
     mapHandle: win32.foundation.HANDLE,
     data: []u8,
 
-    pub fn init() MemoryFileError!MemoryFileWindows {
+    pub fn init(options: queue.QueueOptions) MemoryFileError!MemoryFileWindows {
         const size = 1024;
 
         const mapHandle = win32.system.memory.CreateFileMappingA(
@@ -18,8 +19,8 @@ const MemoryFileWindows = struct {
             null, // attributes
             win32.system.memory.PAGE_READWRITE, // protection/mode
             0, // max size high
-            size, // max size low size
-            "Local\\blah",
+            options.capacity, // max size low size
+            @ptrCast(options.memory_view_name),
         );
 
         if (mapHandle == null)
@@ -30,7 +31,7 @@ const MemoryFileWindows = struct {
             win32.system.memory.FILE_MAP_ALL_ACCESS, // access
             0, // offset high
             0, // offset low
-            size, // view size
+            options.capacity, // view size
         );
 
         if (viewHandle == null)
