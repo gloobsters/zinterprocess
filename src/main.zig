@@ -5,6 +5,10 @@ pub fn main() !void {
     // Prints to stderr, ignoring potential errors.
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
     try zinterprocess.bufferedPrint();
+
+    const queue = zinterprocess.Queue{ .side = zinterprocess.QueueSide.Publisher, .memory_view = .{} };
+
+    queue.init();
 }
 
 test "simple test" {
