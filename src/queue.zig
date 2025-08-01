@@ -5,7 +5,11 @@ pub const Queue = struct {
     side: QueueSide,
     memory_view: MemoryFile,
 
-    pub fn init(self: Queue) void {
-        self.memory_view.fart();
+    // pub fn init(self: Queue) void {
+    //     // self.memory_view.fart();
+    // }
+
+    pub fn deinit(self: Queue) void {
+        self.memory_view.deinit();
     }
 };
