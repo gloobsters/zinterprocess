@@ -32,9 +32,13 @@ pub fn main() !void {
         .path = tempPath,
         .allocator = gpa,
         .runtime_safety = runtime_safety,
+        .memory_view_name = "sample-queue",
     });
 
-    _ = try queue.dequeue();
+    const data = try queue.dequeue();
+    defer gpa.free(data);
+
+    std.debug.print("Received data: {s}\n", .{data});
 
     defer queue.deinit();
 }

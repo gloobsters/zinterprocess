@@ -1,5 +1,6 @@
 const std = @import("std");
 const MemoryFile = @import("memory_view.zig").MemoryFile;
+const CircularBuffer = @import("circular_buffer.zig").CircularBuffer;
 
 pub const QueueOptions = struct {
     /// The side of the queue, either Publisher (write) or Subscriber (read).
@@ -45,12 +46,19 @@ pub const Queue = struct {
     side: QueueSide,
     memory_view: MemoryFile,
     options: QueueOptions,
+    buffer: CircularBuffer,
 
     pub fn init(options: QueueOptions) !Queue {
+        const memory_view = try MemoryFile.init(options);
+
         return .{
             .side = options.side,
-            .memory_view = try .init(options),
+            .memory_view = memory_view,
             .options = options,
+            .buffer = CircularBuffer{
+                .buffer = memory_view.data_ptr + @sizeOf(QueueHeader),
+                .capacity = options.capacity,
+            },
         };
     }
 
@@ -62,7 +70,7 @@ pub const Queue = struct {
         return @ptrCast(@alignCast(self.memory_view.data_ptr));
     }
 
-    pub fn dequeue(self: Queue) ![]u8 {
+    pub fn dequeueOnce(self: Queue) ![]u8 {
         if (self.options.runtime_safety and self.side != QueueSide.Subscriber) {
             return QueueError.InvalidQueueSide;
         }
@@ -72,6 +80,26 @@ pub const Queue = struct {
             return QueueError.QueueEmpty;
         }
 
-        return QueueError.NotImplemented;
+        // below is temporary
+        const buffer = try self.options.allocator.alloc(u8, 1024);
+
+        self.buffer.read(0, buffer);
+
+        return buffer;
+    }
+
+    pub fn dequeue(self: Queue) ![]u8 {
+        while (true) {
+            const result = self.dequeueOnce() catch |err| {
+                if (err == QueueError.QueueEmpty) {
+                    std.Thread.sleep(10 * std.time.ns_per_ms);
+                    continue;
+                } else {
+                    return err;
+                }
+            };
+
+            return result;
+        }
     }
 };
