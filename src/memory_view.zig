@@ -51,14 +51,17 @@ const MemoryFileWindows = struct {
 };
 
 const MemoryFileUnix = struct {
-    data: []u8,
+    data: []u8 = &.{},
 
-    pub fn init() MemoryFileWindows {
+    pub fn init(options: queue.QueueOptions) MemoryFileError!MemoryFileUnix {
+        _ = options;
         const file = MemoryFileUnix{};
         return file;
     }
 
-    pub fn deinit() void {}
+    pub fn deinit(self: MemoryFileUnix) void {
+        _ = self;
+    }
 };
 
 pub const MemoryFile = if (@import("builtin").os.tag == .windows) MemoryFileWindows else MemoryFileUnix;
