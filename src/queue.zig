@@ -17,6 +17,23 @@ pub const QueueOptions = struct {
 };
 
 pub const QueueSide = enum { Publisher, Subscriber };
+
+pub const QueueHeader = struct {
+    ReadOffset: i64,
+    WriteOffset: i64,
+    ReadLockTimestamp: i64,
+    Reserved: i64,
+
+    pub fn isEmpty(self: QueueHeader) bool {
+        return self.ReadOffset == self.WriteOffset;
+    }
+};
+
+comptime {
+    if (@sizeOf(QueueHeader) != 32)
+        @compileError("Queue header size must be 32 bytes");
+}
+
 pub const Queue = struct {
     side: QueueSide,
     memory_view: MemoryFile,

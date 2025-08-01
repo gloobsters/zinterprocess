@@ -10,9 +10,10 @@ const MemoryFileError = error{
 const MemoryFileWindows = struct {
     mapHandle: win32.foundation.HANDLE,
     data: []u8,
+    data_ptr: [*]u8,
 
     pub fn init(options: queue.QueueOptions) !MemoryFileWindows {
-        const size = 1024;
+        const size = @sizeOf(queue.QueueHeader) + 1024;
 
         const lpNamePrefix = "CT_IP_";
         const lpName: []u8 = try options.allocator.alloc(u8, lpNamePrefix.len + options.memory_view_name.len);
@@ -44,9 +45,12 @@ const MemoryFileWindows = struct {
         if (viewHandle == null)
             return MemoryFileError.ViewFailed;
 
+        const data_ptr = @as([*]u8, @ptrCast(viewHandle.?));
+
         const file = MemoryFileWindows{
             .mapHandle = mapHandle.?,
-            .data = @as([*]u8, @ptrCast(viewHandle.?))[0..size],
+            .data = data_ptr[0..size],
+            .data_ptr = data_ptr,
         };
 
         return file;
