@@ -3,9 +3,14 @@ const zinterprocess = @import("zinterprocess");
 const builtin = @import("builtin");
 const win32 = @import("win32");
 
+const runtime_safety = switch (builtin.mode) {
+    .Debug, .ReleaseSafe => true,
+    .ReleaseFast, .ReleaseSmall => false,
+};
+
 pub fn main() !void {
     var debug_alloc_impl: std.heap.DebugAllocator(.{}) = .init;
-    const gpa = if (std.debug.runtime_safety) debug_alloc_impl.allocator() else std.heap.smp_allocator;
+    const gpa = if (runtime_safety) debug_alloc_impl.allocator() else std.heap.smp_allocator;
 
     var tempPath: []const u8 = undefined;
     if (builtin.os.tag == .linux) {
@@ -22,6 +27,14 @@ pub fn main() !void {
         tempPath = buffer[0..len];
     } else std.debug.panic("Unsupported OS: {s}", .{builtin.os.tag});
 
-    const queue = try zinterprocess.Queue.init(.{ .side = zinterprocess.QueueSide.Publisher, .path = tempPath, .allocator = gpa });
+    const queue = try zinterprocess.Queue.init(.{
+        .side = zinterprocess.QueueSide.Subscriber,
+        .path = tempPath,
+        .allocator = gpa,
+        .runtime_safety = runtime_safety,
+    });
+
+    _ = try queue.dequeue();
+
     defer queue.deinit();
 }

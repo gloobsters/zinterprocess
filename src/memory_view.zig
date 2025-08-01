@@ -13,7 +13,7 @@ const MemoryFileWindows = struct {
     data_ptr: [*]u8,
 
     pub fn init(options: queue.QueueOptions) !MemoryFileWindows {
-        const size = @sizeOf(queue.QueueHeader) + 1024;
+        const capacity = @sizeOf(queue.QueueHeader) + 1024;
 
         const lpNamePrefix = "CT_IP_";
         const lpName: []u8 = try options.allocator.alloc(u8, lpNamePrefix.len + options.memory_view_name.len);
@@ -49,7 +49,7 @@ const MemoryFileWindows = struct {
 
         const file = MemoryFileWindows{
             .mapHandle = mapHandle.?,
-            .data = data_ptr[0..size],
+            .data = data_ptr[0..capacity],
             .data_ptr = data_ptr,
         };
 

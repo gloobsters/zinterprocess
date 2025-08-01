@@ -14,6 +14,7 @@ pub const QueueOptions = struct {
     /// This only deletes the backing file if a file path is specified.
     destroy_on_deinit: bool = false,
     allocator: std.mem.Allocator,
+    runtime_safety: bool = true,
 };
 
 pub const QueueSide = enum { Publisher, Subscriber };
@@ -34,18 +35,43 @@ comptime {
         @compileError("Queue header size must be 32 bytes");
 }
 
+pub const QueueError = error{
+    InvalidQueueSide,
+    QueueEmpty,
+    NotImplemented,
+};
+
 pub const Queue = struct {
     side: QueueSide,
     memory_view: MemoryFile,
+    options: QueueOptions,
 
     pub fn init(options: QueueOptions) !Queue {
         return .{
             .side = options.side,
             .memory_view = try .init(options),
+            .options = options,
         };
     }
 
     pub fn deinit(self: Queue) void {
         self.memory_view.deinit();
+    }
+
+    pub fn get_header(self: Queue) *QueueHeader {
+        return @ptrCast(@alignCast(self.memory_view.data_ptr));
+    }
+
+    pub fn dequeue(self: Queue) ![]u8 {
+        if (self.options.runtime_safety and self.side != QueueSide.Subscriber) {
+            return QueueError.InvalidQueueSide;
+        }
+
+        const header = self.get_header();
+        if (header.isEmpty()) {
+            return QueueError.QueueEmpty;
+        }
+
+        return QueueError.NotImplemented;
     }
 };
