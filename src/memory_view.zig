@@ -1,19 +1,44 @@
 const win32 = @import("win32");
 const std = @import("std");
 
-const MemoryFileWindows = struct {
-    mapHandle: ?win32.foundation.HANDLE,
+const MemoryFileError = error{
+    MapFailed,
+    ViewFailed,
+};
 
-    pub fn init() MemoryFileWindows {
+const MemoryFileWindows = struct {
+    mapHandle: win32.foundation.HANDLE,
+    data: []u8,
+
+    pub fn init() MemoryFileError!MemoryFileWindows {
+        const size = 1024;
+
+        const mapHandle = win32.system.memory.CreateFileMappingA(
+            win32.foundation.INVALID_HANDLE_VALUE,
+            null, // attributes
+            win32.system.memory.PAGE_READWRITE, // protection/mode
+            0, // max size high
+            size, // max size low size
+            "Local\\blah",
+        );
+
+        if (mapHandle == null)
+            return MemoryFileError.MapFailed;
+
+        const viewHandle = win32.system.memory.MapViewOfFile(
+            mapHandle,
+            win32.system.memory.FILE_MAP_ALL_ACCESS, // access
+            0, // offset high
+            0, // offset low
+            size, // view size
+        );
+
+        if (viewHandle == null)
+            return MemoryFileError.ViewFailed;
+
         const file = MemoryFileWindows{
-            .mapHandle = win32.system.memory.CreateFileMappingA(
-                win32.foundation.INVALID_HANDLE_VALUE,
-                null, // attributes
-                win32.system.memory.PAGE_READWRITE, // protection/mode
-                0, // max size high
-                1024, // max size low size
-                "Local\\MemoryView",
-            ),
+            .mapHandle = mapHandle.?,
+            .data = @as([*]u8, @ptrCast(viewHandle.?))[0..size],
         };
 
         return file;
@@ -25,6 +50,8 @@ const MemoryFileWindows = struct {
 };
 
 const MemoryFileUnix = struct {
+    data: []u8,
+
     pub fn init() MemoryFileWindows {
         const file = MemoryFileUnix{};
         return file;
