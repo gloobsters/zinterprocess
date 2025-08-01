@@ -11,16 +11,23 @@ const MemoryFileWindows = struct {
     mapHandle: win32.foundation.HANDLE,
     data: []u8,
 
-    pub fn init(options: queue.QueueOptions) MemoryFileError!MemoryFileWindows {
+    pub fn init(options: queue.QueueOptions) !MemoryFileWindows {
         const size = 1024;
+
+        const lpNamePrefix = "CT_IP_";
+        const lpName: []u8 = try options.allocator.alloc(u8, lpNamePrefix.len + options.memory_view_name.len);
+        defer options.allocator.free(lpName);
+
+        @memcpy(lpName[0..lpNamePrefix.len], lpNamePrefix);
+        @memcpy(lpName[lpNamePrefix.len..], options.memory_view_name);
 
         const mapHandle = win32.system.memory.CreateFileMappingA(
             win32.foundation.INVALID_HANDLE_VALUE,
-            null, // attributes
-            win32.system.memory.PAGE_READWRITE, // protection/mode
-            0, // max size high
-            options.capacity, // max size low size
-            @ptrCast(options.memory_view_name),
+            null,
+            win32.system.memory.PAGE_READWRITE,
+            0,
+            options.capacity,
+            @ptrCast(lpName),
         );
 
         if (mapHandle == null)
