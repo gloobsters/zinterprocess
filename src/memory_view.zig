@@ -62,8 +62,6 @@ const MemoryFileWindows = struct {
 };
 
 const MemoryFileUnix = struct {
-    fd: std.fs.File,
-
     data: []u8,
     data_ptr: [*]u8,
 
@@ -91,6 +89,7 @@ const MemoryFileUnix = struct {
             .truncate = true,
             .exclusive = false,
         });
+        defer file.close();
 
         const ptr = try std.posix.mmap(
             null,
@@ -110,7 +109,6 @@ const MemoryFileUnix = struct {
     }
 
     pub fn deinit(self: MemoryFileUnix) void {
-        try self.fd.close();
         try std.posix.munmap(self.data_ptr);
     }
 };
