@@ -42,6 +42,7 @@ comptime {
 pub const QueueError = error{
     InvalidQueueSide,
     QueueEmpty,
+    QueueFull,
     QueueReadLocked,
     PublisherCrashed,
     ReadLockFailed,
@@ -77,6 +78,34 @@ pub const Queue = struct {
     fn safe_increment_message_offset(self: Queue, offset: i64, increment: i64) i64 {
         const capacity: i64 = @intCast(self.buffer.buffer.len);
         return @mod(offset + increment, capacity * 2);
+    }
+
+    fn check_capacity(self: Queue, header: *QueueHeader, message_length: usize) bool {
+        const len: usize = self.buffer.buffer.len;
+        // const len_i: i64 = @intCast(len);
+
+        if (message_length > len)
+            return false;
+
+        if (header.isEmpty())
+            return true;
+
+        // const read_offset = @mod(header.read_offset, len_i);
+        // const write_offset = @mod(header.write_offset, len_i);
+
+        // if (read_offset == write_offset) {
+        //     return false;
+        // }
+
+        // if (read_offset < write_offset) {
+        //     if (@as(i64, @intCast(message_length)) > len_i + read_offset - write_offset) {
+        //         return false;
+        //     }
+        // } else if (@as(i64, @intCast(message_length)) > read_offset - write_offset) {
+        //     return false;
+        // }
+
+        return true;
     }
 
     pub fn dequeueOnce(self: Queue) ![]u8 {
@@ -150,6 +179,35 @@ pub const Queue = struct {
             };
 
             return result;
+        }
+    }
+
+    pub fn enqueue(self: Queue, message: []const u8) !void {
+        if (self.options.runtime_safety and self.side != QueueSide.Publisher) {
+            return QueueError.InvalidQueueSide;
+        }
+
+        const body_length = message.len;
+        const message_length = common.padded_message_length(body_length);
+
+        while (true) {
+            const header = self.get_header();
+
+            if (!self.check_capacity(header, message_length)) {
+                return QueueError.QueueFull;
+            }
+
+            const write_offset = header.write_offset;
+            const new_write_offset = self.safe_increment_message_offset(write_offset, @intCast(message_length));
+
+            if (@cmpxchgWeak(i64, &header.write_offset, write_offset, new_write_offset, .seq_cst, .seq_cst) == null) {
+                // std.debug.print("Writing message with size {d}\n", .{message_length});
+
+                self.buffer.write_struct(MessageHeader, &.{ .body_length = @intCast(body_length), .state = .Writing }, @intCast(write_offset));
+                self.buffer.write(message, common.message_body_offset(@intCast(write_offset)));
+                self.buffer.write_struct(MessageState, &.ReadyToBeConsumed, @intCast(write_offset));
+                return;
+            }
         }
     }
 };

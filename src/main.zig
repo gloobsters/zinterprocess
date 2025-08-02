@@ -28,27 +28,35 @@ pub fn main() !void {
     } else std.debug.panic("Unsupported OS: {s}", .{builtin.os.tag});
 
     const queue = try zinterprocess.Queue.init(.{
-        .side = zinterprocess.QueueSide.Subscriber,
+        .side = zinterprocess.QueueSide.Publisher,
         .path = tempPath,
         .allocator = gpa,
         .runtime_safety = runtime_safety,
         .capacity = 1024 * 1024,
         .memory_view_name = "sample-queue",
     });
-
     while (true) {
-        const data = try queue.dequeue();
-        defer gpa.free(data);
+        queue.enqueue("test\n") catch |err| {
+            if (err == zinterprocess.QueueError.QueueFull) {
+                std.debug.print("Queue is full, waiting...\n", .{});
+                std.Thread.sleep(1 * std.time.ns_per_s);
+                continue;
+            } else {
+                return err;
+            }
+        };
+        // const data = try queue.dequeue();
+        // defer gpa.free(data);
 
-        std.debug.print("Received data: {s} ({d} bytes)\n", .{ data, data.len });
+        // std.debug.print("Received data: {s} ({d} bytes)\n", .{ data, data.len });
 
-        for (data) |byte| {
-            std.debug.print("{X:0>2}", .{byte});
-        }
+        // for (data) |byte| {
+        //     std.debug.print("{X:0>2}", .{byte});
+        // }
 
-        if (data.len > 0) {
-            std.debug.print("\n", .{});
-        }
+        // if (data.len > 0) {
+        //     std.debug.print("\n", .{});
+        // }
     }
 
     defer queue.deinit();

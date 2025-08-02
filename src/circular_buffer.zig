@@ -24,6 +24,23 @@ pub const CircularBuffer = struct {
         @memcpy(out[right_len..out.len], self.buffer[0..left_len]);
     }
 
+    pub fn write(self: CircularBuffer, data: []const u8, offset: usize) void {
+        if (data.len == 0) return;
+
+        const write_offset = self.adjust_offset(offset);
+        const right_len = @min(self.buffer.len - write_offset, data.len);
+        @memcpy(self.buffer[write_offset .. write_offset + right_len], data[0..right_len]);
+
+        const left_len = data.len - right_len;
+        @memcpy(self.buffer[0..left_len], data[right_len..data.len]);
+    }
+
+    // *const T is to force the compiler to not copy by value
+    pub fn write_struct(self: CircularBuffer, comptime T: type, data: *const T, offset: usize) void {
+        const bytes: []const u8 = std.mem.asBytes(data);
+        self.write(bytes, offset);
+    }
+
     pub fn clear(self: CircularBuffer, offset: usize, len: usize) void {
         if (len == 0) return;
 
