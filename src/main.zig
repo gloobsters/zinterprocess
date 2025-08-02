@@ -32,6 +32,7 @@ pub fn main() !void {
         .path = tempPath,
         .allocator = gpa,
         .runtime_safety = runtime_safety,
+        .capacity = 1024 * 1024,
         .memory_view_name = "sample-queue",
     });
 
