@@ -35,10 +35,12 @@ pub fn main() !void {
         .memory_view_name = "sample-queue",
     });
 
-    const data = try queue.dequeue();
-    defer gpa.free(data);
+    while (true) {
+        const data = try queue.dequeue();
+        defer gpa.free(data);
 
-    std.debug.print("Received data: {s}\n", .{data});
+        std.debug.print("Received data: {s} ({d} bytes)\n", .{ data, data.len });
+    }
 
     defer queue.deinit();
 }
