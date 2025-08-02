@@ -40,6 +40,14 @@ pub fn main() !void {
         defer gpa.free(data);
 
         std.debug.print("Received data: {s} ({d} bytes)\n", .{ data, data.len });
+
+        for (data) |byte| {
+            std.debug.print("{X:0>2}", .{byte});
+        }
+
+        if (data.len > 0) {
+            std.debug.print("\n", .{});
+        }
     }
 
     defer queue.deinit();
