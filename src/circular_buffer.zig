@@ -32,7 +32,6 @@ pub const CircularBuffer = struct {
         @memset(self.buffer[offset_adjusted .. offset_adjusted + right_len], 0);
 
         const left_len = len - right_len;
-        if (left_len > 0)
-            @memset(self.buffer[0..left_len], 0);
+        @memset(self.buffer[0..left_len], 0);
     }
 };
