@@ -61,8 +61,7 @@ pub const Queue = struct {
             .memory_view = memory_view,
             .options = options,
             .buffer = CircularBuffer{
-                .buffer = memory_view.data_ptr + @sizeOf(QueueHeader),
-                .capacity = options.capacity,
+                .buffer = memory_view.data_ptr[@sizeOf(QueueHeader)..options.capacity],
             },
         };
     }
@@ -76,7 +75,7 @@ pub const Queue = struct {
     }
 
     fn safe_increment_message_offset(self: Queue, offset: i64, increment: i64) i64 {
-        const capacity: i64 = @intCast(self.buffer.capacity);
+        const capacity: i64 = @intCast(self.buffer.buffer.len);
         return @mod(offset + increment, capacity * 2);
     }
 
