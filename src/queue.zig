@@ -125,7 +125,7 @@ pub const Queue = struct {
         const body_length: usize = @intCast(message_header.body_length);
 
         const buffer = try self.options.allocator.alloc(u8, body_length);
-        self.buffer.read(common.message_body_offset(body_length), buffer);
+        self.buffer.read(common.message_body_offset(@intCast(read_offset)), buffer);
 
         const message_length = common.padded_message_length(body_length);
         self.buffer.clear(@intCast(read_offset), message_length);
