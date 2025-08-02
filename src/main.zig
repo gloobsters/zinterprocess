@@ -14,7 +14,7 @@ pub fn main() !void {
 
     var tempPath: []const u8 = undefined;
     if (builtin.os.tag == .linux) {
-        tempPath = "/dev/shm/.cloudtoid/interprocess/mmf";
+        tempPath = "/dev/shm/.cloudtoid/interprocess/mmf/";
     } else if (builtin.os.tag == .windows) {
         var buffer: [std.fs.max_path_bytes]u8 = undefined;
 

@@ -62,16 +62,56 @@ const MemoryFileWindows = struct {
 };
 
 const MemoryFileUnix = struct {
-    data: []u8 = &.{},
+    fd: std.fs.File,
 
-    pub fn init(options: queue.QueueOptions) MemoryFileError!MemoryFileUnix {
-        _ = options;
-        const file = MemoryFileUnix{};
-        return file;
+    data: []u8,
+    data_ptr: [*]u8,
+
+    pub fn init(options: queue.QueueOptions) !MemoryFileUnix {
+        const path_len = if (options.path) |p| p.len else 0;
+        const file_ext = ".qu";
+        const filename: []u8 = try options.allocator.alloc(u8, path_len + options.memory_view_name.len + file_ext.len);
+        defer options.allocator.free(filename);
+
+        if (options.path) |p| {
+            @memcpy(filename[0..path_len], p);
+        }
+        @memcpy(filename[path_len .. path_len + options.memory_view_name.len], options.memory_view_name);
+        @memcpy(filename[path_len + options.memory_view_name.len ..], file_ext);
+
+        std.debug.print("Using path for memory file: {s}\n", .{filename});
+
+        if (options.path) |p| {
+            const root = try std.fs.openDirAbsolute("/", .{});
+            try root.makePath(p);
+        }
+
+        const file = try std.fs.cwd().createFile(filename, .{
+            .read = true,
+            .truncate = true,
+            .exclusive = false,
+        });
+
+        const ptr = try std.posix.mmap(
+            null,
+            options.capacity,
+            std.posix.PROT.READ | std.posix.PROT.WRITE,
+            .{ .TYPE = .SHARED },
+            file.handle,
+            0,
+        );
+
+        const mapped_file: MemoryFileUnix = .{
+            .data_ptr = ptr.ptr,
+            .data = ptr,
+            .fd = file,
+        };
+        return mapped_file;
     }
 
     pub fn deinit(self: MemoryFileUnix) void {
-        _ = self;
+        try self.fd.close();
+        try std.posix.munmap(self.data_ptr);
     }
 };
 
