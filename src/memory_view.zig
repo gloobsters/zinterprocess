@@ -103,7 +103,6 @@ const MemoryFileUnix = struct {
         const mapped_file: MemoryFileUnix = .{
             .data_ptr = ptr.ptr,
             .data = ptr,
-            .fd = file,
         };
         return mapped_file;
     }
