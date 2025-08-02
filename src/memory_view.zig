@@ -91,6 +91,8 @@ const MemoryFileUnix = struct {
         });
         defer file.close();
 
+        try file.setEndPos(options.capacity);
+
         const ptr = try std.posix.mmap(
             null,
             options.capacity,
