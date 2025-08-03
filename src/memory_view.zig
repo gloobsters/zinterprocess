@@ -76,12 +76,13 @@ const MemoryFileUnix = struct {
         @memcpy(filename[path.len .. path.len + options.memory_view_name.len], options.memory_view_name);
         @memcpy(filename[path.len + options.memory_view_name.len ..], file_ext);
 
+        const root = try std.fs.openDirAbsolute("/", .{});
+
         if (options.path) |p| {
-            const root = try std.fs.openDirAbsolute("/", .{});
             try root.makePath(p);
         }
 
-        const file = try std.fs.cwd().createFile(filename, .{
+        const file = root.createFile(filename, .{
             .read = true,
             .truncate = true,
             .exclusive = false,
