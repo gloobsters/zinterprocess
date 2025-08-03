@@ -70,7 +70,7 @@ const MemoryFileUnix = struct {
 
         const file_ext = ".qu";
         var filename_buf: [std.fs.max_path_bytes]u8 = undefined;
-        const filename = try std.fmt.bufPrint(&filename_buf, "{s}/{s}/{s}", .{ path, options.memory_view_name, file_ext });
+        const filename = try std.fmt.bufPrint(&filename_buf, "{s}/{s}{s}", .{ path, options.memory_view_name, file_ext });
 
         const root = try std.fs.openDirAbsolute("/", .{});
         try root.makePath(path);
