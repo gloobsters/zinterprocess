@@ -82,7 +82,7 @@ const MemoryFileUnix = struct {
             try root.makePath(p);
         }
 
-        const file = root.createFile(filename, .{
+        const file = try root.createFile(filename, .{
             .read = true,
             .truncate = true,
             .exclusive = false,
