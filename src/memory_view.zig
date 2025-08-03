@@ -110,7 +110,7 @@ const MemoryFileUnix = struct {
     }
 
     pub fn deinit(self: MemoryFileUnix) void {
-        try std.posix.munmap(self.data_ptr);
+        std.posix.munmap(@alignCast(self.data));
     }
 };
 
