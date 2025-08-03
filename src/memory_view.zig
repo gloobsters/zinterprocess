@@ -66,18 +66,15 @@ const MemoryFileUnix = struct {
     data_ptr: [*]u8,
 
     pub fn init(options: queue.QueueOptions) !MemoryFileUnix {
-        const path_len = if (options.path) |p| p.len else 0;
+        const path: []const u8 = if (options.path) |p| p else "/dev/shm/.cloudtoid/interprocess/mmf/";
+
         const file_ext = ".qu";
-        const filename: []u8 = try options.allocator.alloc(u8, path_len + options.memory_view_name.len + file_ext.len);
+        const filename: []u8 = try options.allocator.alloc(u8, path.len + options.memory_view_name.len + file_ext.len);
         defer options.allocator.free(filename);
 
-        if (options.path) |p| {
-            @memcpy(filename[0..path_len], p);
-        }
-        @memcpy(filename[path_len .. path_len + options.memory_view_name.len], options.memory_view_name);
-        @memcpy(filename[path_len + options.memory_view_name.len ..], file_ext);
-
-        std.debug.print("Using path for memory file: {s}\n", .{filename});
+        @memcpy(filename[0..path.len], path);
+        @memcpy(filename[path.len .. path.len + options.memory_view_name.len], options.memory_view_name);
+        @memcpy(filename[path.len + options.memory_view_name.len ..], file_ext);
 
         if (options.path) |p| {
             const root = try std.fs.openDirAbsolute("/", .{});

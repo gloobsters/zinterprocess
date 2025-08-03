@@ -12,10 +12,9 @@ pub fn main() !void {
     var debug_alloc_impl: std.heap.DebugAllocator(.{}) = .init;
     const gpa = if (runtime_safety) debug_alloc_impl.allocator() else std.heap.smp_allocator;
 
-    var tempPath: []const u8 = undefined;
-    if (builtin.os.tag == .linux) {
-        tempPath = "/dev/shm/.cloudtoid/interprocess/mmf/";
-    } else if (builtin.os.tag == .windows) {
+    var tempPath: ?[]const u8 = null;
+
+    if (builtin.os.tag == .windows) {
         var buffer: [std.fs.max_path_bytes]u8 = undefined;
 
         const len = win32.storage.file_system.GetTempPathA(@intCast(buffer.len), @ptrCast(&buffer));
@@ -25,7 +24,7 @@ pub fn main() !void {
         }
 
         tempPath = buffer[0..len];
-    } else std.debug.panic("Unsupported OS: {s}", .{builtin.os.tag});
+    }
 
     const queue = try zinterprocess.Queue.init(.{
         .side = zinterprocess.QueueSide.Publisher,
