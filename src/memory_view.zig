@@ -69,12 +69,8 @@ const MemoryFileUnix = struct {
         const path: []const u8 = if (options.path) |p| p else "/dev/shm/.cloudtoid/interprocess/mmf/";
 
         const file_ext = ".qu";
-        const filename: []u8 = try options.allocator.alloc(u8, path.len + options.memory_view_name.len + file_ext.len);
-        defer options.allocator.free(filename);
-
-        @memcpy(filename[0..path.len], path);
-        @memcpy(filename[path.len .. path.len + options.memory_view_name.len], options.memory_view_name);
-        @memcpy(filename[path.len + options.memory_view_name.len ..], file_ext);
+        var filename_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const filename = try std.fmt.bufPrint(&filename_buf, "{s}/{s}/{s}", .{ path, options.memory_view_name, file_ext });
 
         const root = try std.fs.openDirAbsolute("/", .{});
         try root.makePath(path);
