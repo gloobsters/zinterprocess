@@ -1,7 +1,8 @@
 const std = @import("std");
-const zinterprocess = @import("zinterprocess");
 const builtin = @import("builtin");
+
 const win32 = @import("win32");
+const zinterprocess = @import("zinterprocess");
 
 const runtime_safety = switch (builtin.mode) {
     .Debug, .ReleaseSafe => true,
@@ -10,7 +11,9 @@ const runtime_safety = switch (builtin.mode) {
 
 pub fn main() !void {
     var debug_alloc_impl: std.heap.DebugAllocator(.{}) = .init;
+    defer if (debug_alloc_impl.deinit() == .leak) @panic("memory leak");
     const gpa = if (runtime_safety) debug_alloc_impl.allocator() else std.heap.smp_allocator;
+    _ = gpa;
 
     var tempPath: ?[]const u8 = null;
 
@@ -27,16 +30,15 @@ pub fn main() !void {
     }
 
     const queue = try zinterprocess.Queue.init(.{
-        .side = zinterprocess.QueueSide.Publisher,
+        .side = zinterprocess.Queue.Side.Publisher,
         .path = tempPath,
-        .allocator = gpa,
         .runtime_safety = runtime_safety,
         .capacity = 1024 * 1024,
         .memory_view_name = "sample-queue",
     });
     while (true) {
         queue.enqueue("test\n") catch |err| {
-            if (err == zinterprocess.QueueError.QueueFull) {
+            if (err == zinterprocess.Queue.Error.QueueFull) {
                 std.debug.print("Queue is full, waiting...\n", .{});
                 std.Thread.sleep(1 * std.time.ns_per_s);
                 continue;
