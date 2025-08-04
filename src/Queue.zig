@@ -23,7 +23,7 @@ pub const Options = struct {
 
 pub const Side = enum { Publisher, Subscriber };
 
-pub const Header = struct {
+pub const Header = extern struct {
     read_offset: i64,
     write_offset: i64,
     read_lock_timestamp: i64,

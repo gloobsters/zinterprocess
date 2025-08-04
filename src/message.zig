@@ -4,7 +4,7 @@ pub const MessageState = enum(i32) {
     ReadyToBeConsumed = 2,
 };
 
-pub const MessageHeader = struct {
+pub const MessageHeader = extern struct {
     state: MessageState,
     body_length: i32,
 };
