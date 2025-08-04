@@ -58,6 +58,14 @@ buffer: CircularBuffer,
 pub fn init(options: Options) !Queue {
     const memory_view = try MemoryFile.init(options);
 
+    var header: *Header = @ptrCast(@alignCast(memory_view.data));
+    if (options.side == .Publisher) {
+        header.write_offset = 0;
+    } else if (options.side == .Subscriber) {
+        header.read_offset = 0;
+        header.read_lock_timestamp = 0;
+    }
+
     return .{
         .side = options.side,
         .memory_view = memory_view,
