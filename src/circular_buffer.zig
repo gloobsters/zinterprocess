@@ -3,18 +3,18 @@ const std = @import("std");
 pub const CircularBuffer = struct {
     buffer: []u8,
 
-    pub fn get_pointer(self: CircularBuffer, offset: usize) [*]u8 {
-        return self.buffer.ptr + self.adjust_offset(offset);
+    pub fn getPointer(self: CircularBuffer, offset: usize) [*]u8 {
+        return self.buffer.ptr + self.adjustOffset(offset);
     }
 
-    fn adjust_offset(self: CircularBuffer, offset: usize) usize {
+    fn adjustOffset(self: CircularBuffer, offset: usize) usize {
         return offset % self.buffer.len;
     }
 
     pub fn read(self: CircularBuffer, offset: usize, out: []u8) void {
         if (out.len == 0) return;
 
-        const read_offset = self.adjust_offset(offset);
+        const read_offset = self.adjustOffset(offset);
 
         const source_buffer = self.buffer.ptr + read_offset;
         const right_len = @min(self.buffer.len - read_offset, out.len);
@@ -27,7 +27,7 @@ pub const CircularBuffer = struct {
     pub fn write(self: CircularBuffer, data: []const u8, offset: usize) void {
         if (data.len == 0) return;
 
-        const write_offset = self.adjust_offset(offset);
+        const write_offset = self.adjustOffset(offset);
         const right_len = @min(self.buffer.len - write_offset, data.len);
         @memcpy(self.buffer[write_offset .. write_offset + right_len], data[0..right_len]);
 
@@ -36,7 +36,7 @@ pub const CircularBuffer = struct {
     }
 
     // *const T is to force the compiler to not copy by value
-    pub fn write_struct(self: CircularBuffer, comptime T: type, data: *const T, offset: usize) void {
+    pub fn writeStruct(self: CircularBuffer, comptime T: type, data: *const T, offset: usize) void {
         const bytes: []const u8 = std.mem.asBytes(data);
         self.write(bytes, offset);
     }
@@ -44,7 +44,7 @@ pub const CircularBuffer = struct {
     pub fn clear(self: CircularBuffer, offset: usize, len: usize) void {
         if (len == 0) return;
 
-        const offset_adjusted = self.adjust_offset(offset);
+        const offset_adjusted = self.adjustOffset(offset);
         const right_len = @min(self.buffer.len - offset_adjusted, len);
         @memset(self.buffer[offset_adjusted .. offset_adjusted + right_len], 0);
 
