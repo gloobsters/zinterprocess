@@ -17,7 +17,7 @@ const MemoryFileWindows = struct {
     data_ptr: [*]u8,
 
     pub fn init(options: Queue.Options) !MemoryFileWindows {
-        const capacity = @sizeOf(Queue.Header) + 1024;
+        const capacity = @sizeOf(Queue.Header) + options.capacity;
 
         var lp_name_buf: [std.fs.max_name_bytes]u8 = undefined;
         // SAFETY: valid names should _never_ exceed the name length limit
@@ -30,7 +30,7 @@ const MemoryFileWindows = struct {
             0,
             options.capacity,
             lp_name.ptr,
-        ) orelse return error.MemoryFileError.MapFailed;
+        ) orelse return MemoryFileError.MapFailed;
 
         const viewHandle = win32.system.memory.MapViewOfFile(
             mapHandle,
