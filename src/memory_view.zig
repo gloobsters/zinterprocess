@@ -71,7 +71,7 @@ const MemoryFileUnix = struct {
 
         const file = try root.createFile(filename, .{
             .read = true,
-            .truncate = true,
+            .truncate = false,
             .exclusive = false,
         });
         defer file.close();
