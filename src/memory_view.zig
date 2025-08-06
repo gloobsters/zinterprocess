@@ -4,7 +4,7 @@ const win32 = @import("win32");
 
 const Queue = @import("Queue.zig");
 
-const MemoryFileError = error{
+pub const MemoryFileError = error{
     MapFailed,
     ViewFailed,
 };
