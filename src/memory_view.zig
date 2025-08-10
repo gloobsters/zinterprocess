@@ -23,14 +23,7 @@ const MemoryFileWindows = struct {
         // SAFETY: valid names should _never_ exceed the name length limit
         const lp_name = std.fmt.bufPrintZ(&lp_name_buf, "CT_IP_{s}", .{options.memory_view_name}) catch unreachable;
 
-        const mapHandle = win32.system.memory.CreateFileMappingA(
-            win32.foundation.INVALID_HANDLE_VALUE,
-            null,
-            win32.system.memory.PAGE_READWRITE,
-            0,
-            options.capacity,
-            lp_name.ptr,
-        ) orelse return MemoryFileError.MapFailed;
+        const mapHandle = try createOrOpenFileMapping(lp_name, options.capacity);
 
         const viewHandle = win32.system.memory.MapViewOfFile(
             mapHandle,
@@ -49,6 +42,52 @@ const MemoryFileWindows = struct {
         };
 
         return file;
+    }
+
+    fn createOrOpenFileMapping(name: [:0]const u8, capacity: u32) !*anyopaque {
+        var wait_retries: usize = 14;
+        var wait_sleep_ms: usize = 0;
+
+        var handle: ?*anyopaque = null;
+
+        while (wait_retries > 0) {
+            handle = win32.system.memory.CreateFileMappingA(
+                win32.foundation.INVALID_HANDLE_VALUE,
+                null,
+                win32.system.memory.PAGE_READWRITE,
+                0,
+                capacity,
+                name.ptr,
+            );
+
+            if (handle != null) {
+                break;
+            }
+
+            handle = win32.system.memory.OpenFileMappingA(
+                @bitCast(win32.system.memory.FILE_MAP_ALL_ACCESS), // dumb windows api randomly uses dword here
+                0,
+                name,
+            );
+
+            if (handle != null) {
+                break;
+            } else {
+                wait_retries -= 1;
+                if (wait_sleep_ms == 0) {
+                    wait_sleep_ms = 10;
+                } else {
+                    std.Thread.sleep(wait_sleep_ms * std.time.ns_per_ms);
+                    wait_sleep_ms *= 2;
+                }
+            }
+        }
+
+        if (handle == null) {
+            return error.MapFailed;
+        }
+
+        return handle.?;
     }
 
     pub fn deinit(self: MemoryFileWindows) void {
