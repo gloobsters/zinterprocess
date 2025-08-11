@@ -1,0 +1,6 @@
+# zinterprocess
+Zig implementation of YDMS's fork of Interprocess.
+
+https://github.com/Yellow-Dog-Man/interprocess
+
+This repository takes some creative liberties in some areas to make the API easier to use in Zig, so it's not an exact replica. The implementations are compatible, though.
