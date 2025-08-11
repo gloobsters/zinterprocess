@@ -72,8 +72,9 @@ pub fn init(options: Options) !Queue {
         .side = options.side,
         .memory_view = memory_view,
         .options = options,
-        .buffer = CircularBuffer{
+        .buffer = .{
             .buffer = memory_view.data[@sizeOf(Header)..options.capacity],
+            .capacity = @intCast(options.capacity),
         },
     };
 }
@@ -160,7 +161,8 @@ pub fn dequeueOnce(self: Queue, gpa: std.mem.Allocator) ![]u8 {
             return Error.PublisherCrashed;
         }
 
-        try std.Thread.yield();
+        // SAFETY: we don't particularly care if we can't yield here.
+        std.Thread.yield() catch {};
     }
 
     const body_length: usize = @intCast(message_header.body_length);
