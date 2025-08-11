@@ -160,7 +160,7 @@ pub fn dequeueOnce(self: Queue, gpa: std.mem.Allocator) ![]u8 {
             break;
 
         if (common.getTicks() - start > ticks_for_ten_seconds) {
-            log.warn("Publisher crashed bug hit, current header data was {any}", .{message_header});
+            log.warn("Publisher crashed bug hit. Queue header data was {any} (capacity: {d}), current header data was {any}", .{ header, self.buffer.buffer.len, message_header });
             @atomicStore(i64, &header.write_offset, write_offset, .seq_cst);
             return Error.PublisherCrashed;
         }
