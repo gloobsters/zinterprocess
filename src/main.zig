@@ -62,3 +62,7 @@ pub fn main() !void {
 
     defer queue.deinit();
 }
+
+test {
+    std.testing.refAllDeclsRecursive(@This());
+}

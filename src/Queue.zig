@@ -131,21 +131,21 @@ pub fn dequeueOnce(self: Queue, gpa: std.mem.Allocator) ![]u8 {
     }
 
     const header = self.getHeader();
-    if (header.isEmpty()) {
+    if (header.isEmpty())
         return Error.QueueEmpty;
-    }
 
     const read_lock_timestamp = header.read_lock_timestamp;
     const start = common.getTicks();
 
-    const ticks_for_ten_seconds = 10 * std.time.ns_per_s / 100;
+    const ticks_for_ten_seconds = (10 * std.time.ns_per_s) / 100;
     if (start - read_lock_timestamp < ticks_for_ten_seconds)
         return Error.QueueReadLocked;
 
-    // should we use strong instead?
-    if (@cmpxchgWeak(i64, &header.read_lock_timestamp, read_lock_timestamp, start, .seq_cst, .seq_cst) != null) {
+    // take a read-lock so other threads can't read.
+    if (@cmpxchgWeak(i64, &header.read_lock_timestamp, read_lock_timestamp, start, .seq_cst, .seq_cst) != null)
         return Error.ReadLockFailed;
-    }
+    // release our read lock
+    defer @atomicStore(i64, &header.read_lock_timestamp, 0, .seq_cst);
 
     if (header.isEmpty())
         return Error.QueueEmpty;
@@ -180,8 +180,6 @@ pub fn dequeueOnce(self: Queue, gpa: std.mem.Allocator) ![]u8 {
 
     const newReadOffset = self.safeIncrementMessageOffset(read_offset, @intCast(message_length));
     @atomicStore(i64, &header.read_offset, newReadOffset, .seq_cst);
-
-    @atomicStore(i64, &header.read_lock_timestamp, 0, .seq_cst);
 
     return buffer;
 }
