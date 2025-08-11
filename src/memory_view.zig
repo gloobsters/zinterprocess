@@ -2,22 +2,31 @@ const std = @import("std");
 
 const win32 = @import("win32");
 
-const Queue = @import("Queue.zig");
-
 pub const MemoryFileError = error{
     MapFailed,
     ViewFailed,
 };
 
 pub const MemoryFile = if (@import("builtin").os.tag == .windows) MemoryFileWindows else MemoryFileUnix;
+pub const MemoryFileOptions = struct {
+    /// The unique name of the memory view.
+    memory_view_name: []const u8 = "zinterprocess",
+    /// The path to the directory in which the memory mapped file/other files will be stored.
+    path: ?[]const u8 = null,
+    /// The size of the memory view.
+    capacity: u32 = 1024,
+    /// Whether the memory view should be destroyed on deinit.
+    /// This only deletes the backing file if a file path is specified.
+    destroy_on_deinit: bool = false,
+};
 
 const MemoryFileWindows = struct {
     mapHandle: win32.foundation.HANDLE,
     data: []u8,
     data_ptr: [*]u8,
 
-    pub fn init(options: Queue.Options) !MemoryFileWindows {
-        const capacity = @sizeOf(Queue.Header) + options.capacity;
+    pub fn init(options: MemoryFileOptions) !MemoryFileWindows {
+        const capacity = options.capacity;
 
         var lp_name_buf: [std.fs.max_name_bytes]u8 = undefined;
         // SAFETY: valid names should _never_ exceed the name length limit
@@ -98,7 +107,7 @@ const MemoryFileWindows = struct {
 const MemoryFileUnix = struct {
     data: []align(std.heap.page_size_min) u8,
 
-    pub fn init(options: Queue.Options) !MemoryFileUnix {
+    pub fn init(options: MemoryFileOptions) !MemoryFileUnix {
         const path: []const u8 = if (options.path) |p| p else "/dev/shm/.cloudtoid/interprocess/mmf/";
 
         const file_ext = ".qu";

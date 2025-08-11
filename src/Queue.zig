@@ -58,7 +58,12 @@ options: Options,
 buffer: CircularBuffer,
 
 pub fn init(options: Options) !Queue {
-    const memory_view = try MemoryFile.init(options);
+    const memory_view = try MemoryFile.init(.{
+        .capacity = @sizeOf(Queue.Header) + options.capacity,
+        .destroy_on_deinit = options.destroy_on_deinit,
+        .memory_view_name = options.memory_view_name,
+        .path = options.path,
+    });
 
     var header: *Header = @ptrCast(@alignCast(memory_view.data));
     if (options.side == .Publisher) {
@@ -94,7 +99,7 @@ fn safeIncrementMessageOffset(self: Queue, offset: i64, increment: i64) i64 {
 
 fn checkCapacity(self: Queue, header: *Header, message_length: usize) bool {
     const len: usize = self.buffer.buffer.len;
-    // const len_i: i64 = @intCast(len);
+    const len_i: i64 = @intCast(len);
 
     if (message_length > len)
         return false;
@@ -102,20 +107,20 @@ fn checkCapacity(self: Queue, header: *Header, message_length: usize) bool {
     if (header.isEmpty())
         return true;
 
-    // const read_offset = @mod(header.read_offset, len_i);
-    // const write_offset = @mod(header.write_offset, len_i);
+    const read_offset = @mod(header.read_offset, len_i);
+    const write_offset = @mod(header.write_offset, len_i);
 
-    // if (read_offset == write_offset) {
-    //     return false;
-    // }
+    if (read_offset == write_offset) {
+        return false;
+    }
 
-    // if (read_offset < write_offset) {
-    //     if (@as(i64, @intCast(message_length)) > len_i + read_offset - write_offset) {
-    //         return false;
-    //     }
-    // } else if (@as(i64, @intCast(message_length)) > read_offset - write_offset) {
-    //     return false;
-    // }
+    if (read_offset < write_offset) {
+        if (@as(i64, @intCast(message_length)) > len_i + read_offset - write_offset) {
+            return false;
+        }
+    } else if (@as(i64, @intCast(message_length)) > read_offset - write_offset) {
+        return false;
+    }
 
     return true;
 }
