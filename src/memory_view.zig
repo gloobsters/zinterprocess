@@ -115,6 +115,7 @@ const MemoryFileUnix = struct {
         const filename = try std.fmt.bufPrint(&filename_buf, "{s}/{s}{s}", .{ path, options.memory_view_name, file_ext });
 
         const root = try std.fs.openDirAbsolute("/", .{});
+        defer root.close();
         try root.makePath(path);
 
         const file = try root.createFile(filename, .{
