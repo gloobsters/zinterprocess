@@ -2,14 +2,13 @@ const std = @import("std");
 
 pub const CircularBuffer = struct {
     buffer: []u8,
-    capacity: usize,
 
     pub fn getPointer(self: CircularBuffer, offset: usize) [*]u8 {
         return self.buffer.ptr + self.adjustOffset(offset);
     }
 
     fn adjustOffset(self: CircularBuffer, offset: usize) usize {
-        return offset % self.capacity;
+        return offset % self.buffer.len;
     }
 
     pub fn read(self: CircularBuffer, offset: usize, out: []u8) void {

@@ -79,7 +79,6 @@ pub fn init(options: Options) !Queue {
         .options = options,
         .buffer = .{
             .buffer = memory_view.data[@sizeOf(Header)..options.capacity],
-            .capacity = @intCast(options.capacity),
         },
     };
 }
