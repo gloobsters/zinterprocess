@@ -6,6 +6,8 @@ const MemoryFile = @import("memory_view.zig").MemoryFile;
 const MessageHeader = @import("message.zig").MessageHeader;
 const MessageState = @import("message.zig").MessageState;
 
+const log = std.log.scoped(.Queue);
+
 pub const Options = struct {
     /// The side of the queue, either Publisher (write) or Subscriber (read).
     side: Side,
@@ -153,6 +155,7 @@ pub fn dequeueOnce(self: Queue, gpa: std.mem.Allocator) ![]u8 {
             break;
 
         if (common.getTicks() - start > ticks_for_ten_seconds) {
+            log.warn("Publisher crashed bug hit, current header data was {any}", .{message_header});
             @atomicStore(i64, &header.write_offset, write_offset, .seq_cst);
             return Error.PublisherCrashed;
         }
