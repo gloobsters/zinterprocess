@@ -58,8 +58,9 @@ options: Options,
 buffer: CircularBuffer,
 
 pub fn init(options: Options) !Queue {
+    const capacity = @sizeOf(Queue.Header) + options.capacity;
     const memory_view = try MemoryFile.init(.{
-        .capacity = @sizeOf(Queue.Header) + options.capacity,
+        .capacity = capacity,
         .destroy_on_deinit = options.destroy_on_deinit,
         .memory_view_name = options.memory_view_name,
         .path = options.path,
@@ -78,7 +79,7 @@ pub fn init(options: Options) !Queue {
         .memory_view = memory_view,
         .options = options,
         .buffer = .{
-            .buffer = memory_view.data[@sizeOf(Header)..options.capacity],
+            .buffer = memory_view.data[@sizeOf(Header)..capacity],
         },
     };
 }
@@ -160,7 +161,7 @@ pub fn dequeueOnce(self: Queue, gpa: std.mem.Allocator) ![]u8 {
             break;
 
         if (common.getTicks() - start > ticks_for_ten_seconds) {
-            log.warn("Publisher crashed bug hit. Queue header data was {any} (capacity: {d}), current header data was {any}", .{ header, self.buffer.buffer.len, message_header });
+            log.warn("Publisher crashed. Queue header data was {any} (capacity: {d}), current header data was {any}", .{ header, self.buffer.buffer.len, message_header });
             @atomicStore(i64, &header.write_offset, write_offset, .seq_cst);
             return Error.PublisherCrashed;
         }
