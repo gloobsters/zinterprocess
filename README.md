@@ -1,3 +1,8 @@
+# Moved to gloobie
+This project has moved to a subproject underneath the gloobie tree.
+
+You can find it under https://github.com/gloobsters/gloobie/tree/mommy/zinterprocess.
+
 # zinterprocess
 Zig implementation of YDMS's fork of Interprocess.
 
