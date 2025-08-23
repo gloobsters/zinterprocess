@@ -188,7 +188,7 @@ pub fn dequeue(self: Queue, gpa: std.mem.Allocator) ![]u8 {
     while (true) {
         const result = self.dequeueOnce(gpa) catch |err| {
             if (err == Error.QueueEmpty) {
-                std.Thread.sleep(10 * std.time.ns_per_ms);
+                // std.Thread.sleep(10 * std.time.ns_per_ms);
                 continue;
             } else {
                 return err;
